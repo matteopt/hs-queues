@@ -11,7 +11,6 @@ recvAll :: MonadIO m => Socket -> Int -> m BL.ByteString
 recvAll = r mempty where
     r buf _    0 = return $ BU.toLazyByteString buf
     r buf sock m = do
-        liftIO $ print m
         chunk <- recv sock m
         case chunk of
             Nothing -> error "eof"
