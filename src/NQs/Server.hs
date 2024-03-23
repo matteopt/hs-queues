@@ -7,6 +7,8 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Maybe
 import Network.ByteOrder
 import Network.Simple.TCP
+import NQs.Common.Internal
+import NQs.Common.Types
 import NQs.Server.Operations
 import NQs.Server.Parse
 import NQs.Server.Types
@@ -34,7 +36,7 @@ parse :: Connection -> AP.Result Operation -> MaybeT IO (Operation, B.ByteString
 parse _             (AP.Done    i r  ) = pure (r, i)
 parse _             (AP.Fail    _ _ e) = error e
 parse c@(sock, _) p@(AP.Partial _    ) =
-    parse c =<< AP.feed p <$> (hoistMaybe =<< recv sock 4096)
+    parse c =<< AP.feed p <$> B.toStrict <$> recvAll sock 4096
 
 loop' :: State -> Connection -> B.ByteString -> MaybeT IO ()
 loop' state c buf = do

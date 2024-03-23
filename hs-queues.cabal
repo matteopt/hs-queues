@@ -53,6 +53,8 @@ library
 
     -- Modules exported by the library.
     exposed-modules:  NQs.Client
+                    , NQs.Common.Internal
+                    , NQs.Common.Types
                     , NQs.Server
                     , NQs.Server.Operations
                     , NQs.Server.Parse

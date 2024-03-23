@@ -5,6 +5,7 @@ module NQs.Server.Operations where
 import Control.Concurrent.MVar ( modifyMVar, modifyMVar_ )
 import Data.Map.Strict         ((!?))
 import Data.Sequence           ( (|>), Seq(Empty, (:<|)) )
+import NQs.Common.Types
 import NQs.Server.Types
 
 import qualified Data.Map.Strict as Map

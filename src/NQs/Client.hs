@@ -4,7 +4,8 @@ module NQs.Client where
 
 import Network.ByteOrder
 import Network.Simple.TCP
-import NQs.Server.Types
+import NQs.Common.Internal
+import NQs.Common.Types
 
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Lazy       as BL
@@ -22,15 +23,10 @@ push (sock, _) name message = sendLazy sock $
 
 readSized32 :: Connection -> IO (Message)
 readSized32 (sock, _) = do
-    size <- recv sock 4
-    case size of
-        Nothing -> error "eof"
-        Just b  -> do
-            let w = word32 b
-            message <- recv sock $ fromIntegral w
-            case message of
-                Nothing -> error "eof"
-                Just x  -> return x
+    size <- recvAll sock 4
+    let w = word32 $ B.toStrict size
+    message <- recvAll sock $ fromIntegral w
+    return $ B.toStrict message
 
 pop :: Connection -> QueueName -> IO (Maybe Message)
 pop c@(sock, _) name = do
@@ -38,12 +34,11 @@ pop c@(sock, _) name = do
         BL.singleton 1 +++
         (BL.fromStrict $ bytestring32 $ fromIntegral $ B.length name) +++
         BL.fromStrict name
-    r <- recv sock 1
+    r <- recvAll sock 1
     case r of
-        Just "\3" -> Just <$> readSized32 c
-        Just "\4" -> return Nothing
-        Just x   -> print x >> error "unexpected reply"
-        Nothing  -> error "eof"
+        "\3" -> Just <$> readSized32 c
+        "\4" -> return Nothing
+        x    -> print x >> error "unexpected reply"
 
 acquire :: HostName -> IO Connection
 acquire = flip connectSock "7890"
