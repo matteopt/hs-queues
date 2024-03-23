@@ -51,6 +51,6 @@ subToState :: State -> Connection -> QueueName -> IO ()
 subToState state c name = modifyMVar_ state.subs (pure . subTo c name)
 
 execute :: State -> Connection -> Operation -> IO (Maybe OperationResult)
-execute state _ (Push name message) = pushToMVar state name message >> pure Nothing
+execute state _ (Push name message) = decidePush state name message >> pure Nothing
 execute state _ (Pop name) = Just . PopResult <$> popFromMVar state name
 execute state c (Sub name) = subToState state c name >> pure Nothing
