@@ -5,27 +5,17 @@ module NQs.Server where
 import Control.Concurrent.MVar
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Maybe
-import Network.ByteOrder
 import Network.Simple.TCP
 import NQs.Common.Types
+import NQs.Server.Internal
 import NQs.Server.Operations
 import NQs.Server.Parse
 import NQs.Server.Types
 
 import qualified Data.Attoparsec.ByteString as AP
 import qualified Data.ByteString            as B
-import qualified Data.ByteString.Lazy       as BL
 import qualified Data.Map.Strict            as Map
 
-(+++) :: BL.ByteString -> BL.ByteString -> BL.ByteString
-(+++) = BL.append
-
-reply :: Connection -> Maybe Message -> IO ()
-reply (sock, _) (Just message) = sendLazy sock $
-    BL.singleton 3 +++
-    (BL.fromStrict $ bytestring32 $ fromIntegral $ B.length message) +++
-    BL.fromStrict message
-reply (sock, _) Nothing = sendLazy sock $ BL.singleton 4
 
 handle :: Connection -> Maybe OperationResult -> IO ()
 handle c (Just (PopResult x)) = reply c x
@@ -40,7 +30,7 @@ parse c@(sock, _) p@(AP.Partial _    ) =
 loop' :: State -> Connection -> B.ByteString -> MaybeT IO ()
 loop' state c buf = do
     (op, y) <- parse c $ AP.parse operation buf
-    lift (handle c =<< execute state op)
+    lift (handle c =<< execute state c op)
     loop' state c y
 
 loop :: State -> Connection -> MaybeT IO ()
@@ -49,7 +39,8 @@ loop state c = loop' state c ""
 emptyState :: IO State
 emptyState = do
     qs <- newMVar $ Map.empty
-    pure $ State { queues = qs }
+    ss <- newMVar $ Map.empty
+    pure $ State { queues = qs, subs = ss }
 
 runServer :: HostName -> IO ()
 runServer h = do

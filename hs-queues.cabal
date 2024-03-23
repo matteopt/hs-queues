@@ -56,6 +56,7 @@ library
                     , NQs.Common.Internal
                     , NQs.Common.Types
                     , NQs.Server
+                    , NQs.Server.Internal
                     , NQs.Server.Operations
                     , NQs.Server.Parse
                     , NQs.Server.Types
@@ -75,6 +76,7 @@ library
                     , attoparsec
                     , attoparsec-binary
                     , transformers
+                    , random
 
     -- Directories containing source files.
     hs-source-dirs:   src

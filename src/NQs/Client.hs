@@ -2,6 +2,8 @@
 
 module NQs.Client where
 
+import Control.Monad
+import Data.Maybe
 import Network.ByteOrder
 import Network.Simple.TCP
 import NQs.Common.Internal
@@ -28,17 +30,29 @@ readSized32 (sock, _) = do
     message <- recvAll sock $ fromIntegral w
     return $ B.toStrict message
 
+readReply :: Connection -> IO (Maybe Message)
+readReply c@(sock, _) = do
+    r <- recvAll sock 1
+    case r of
+        "\3" -> Just <$> readSized32 c
+        "\4" -> return Nothing
+        x    -> print x >> error "unexpected reply"
+
 pop :: Connection -> QueueName -> IO (Maybe Message)
 pop c@(sock, _) name = do
     sendLazy sock $
         BL.singleton 1 +++
         (BL.fromStrict $ bytestring32 $ fromIntegral $ B.length name) +++
         BL.fromStrict name
-    r <- recvAll sock 1
-    case r of
-        "\3" -> Just <$> readSized32 c
-        "\4" -> return Nothing
-        x    -> print x >> error "unexpected reply"
+    readReply c
+
+sub :: Connection -> QueueName -> (Message -> IO ()) -> IO ()
+sub c@(sock, _) name f = do
+    sendLazy sock $
+        BL.singleton 2 +++
+        (BL.fromStrict $ bytestring32 $ fromIntegral $ B.length name) +++
+        BL.fromStrict name
+    forever $ readReply c >>= (f . fromJust)
 
 acquire :: HostName -> IO Connection
 acquire = flip connectSock "7890"
