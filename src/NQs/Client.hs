@@ -42,7 +42,7 @@ pop c@(sock, _) name = do
     case r of
         Just "\3" -> Just <$> readSized32 c
         Just "\4" -> return Nothing
-        Just _   -> error "unexpected reply"
+        Just x   -> print x >> error "unexpected reply"
         Nothing  -> error "eof"
 
 acquire :: HostName -> IO Connection
