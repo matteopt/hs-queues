@@ -50,7 +50,7 @@ emptyState = do
     qs <- newMVar $ Map.empty
     pure $ State { queues = qs }
 
-runServer :: IO ()
-runServer = do
+runServer :: HostName -> IO ()
+runServer h = do
     state <- emptyState
-    serve HostAny "7890" $ \c -> runMaybeT (loop state c) >> pure ()
+    serve (Host h) "7890" $ \c -> runMaybeT (loop state c) >> pure ()

@@ -3,4 +3,4 @@ module Main where
 import NQs.Server
 
 main :: IO ()
-main = runServer
+main = runServer "localhost"
